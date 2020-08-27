@@ -1,4 +1,4 @@
-# Apache Sling Featuremodel - Unpack Exension
+# Apache Sling Featuremodel - Unpack Extension
 
 This module provides support for a generic "unzip" extension for the feature model. It allows you to have feature model artifact extensions unzipped to the file system.
 
