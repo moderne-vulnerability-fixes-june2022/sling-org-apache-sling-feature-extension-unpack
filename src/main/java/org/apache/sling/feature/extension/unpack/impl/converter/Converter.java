@@ -100,7 +100,7 @@ public class Converter {
 
         List<String> unhandled = new ArrayList<>();
 
-        Extension extension = new Extension(ExtensionType.ARTIFACTS, extensionName, ExtensionState.REQUIRED);
+        Extension extension = new Extension(ExtensionType.ARTIFACTS, extensionName, ExtensionState.OPTIONAL);
 
         for (String urlString : urls) {
             URL url = new URL(urlString);
