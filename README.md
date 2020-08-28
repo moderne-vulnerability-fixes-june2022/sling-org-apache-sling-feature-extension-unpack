@@ -32,6 +32,7 @@ java -cp ${HOME}/.m2/repository/org/apache/sling/org.apache.sling.commons.johnzo
 
 ```
 
+Alternatively, there is an assembly provided.
 
 ## Configuration
 
