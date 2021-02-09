@@ -77,7 +77,7 @@ public class Unpack {
 
             for (Artifact artifact : extension.getArtifacts()) {
                 Map<String, Object> context = new HashMap<>();
-                context.put("artifact.id", artifact.getId());
+                context.put("artifact.id", artifact.getId().toMvnId());
                 context.put("dir", dir);
                 context.put("override", Boolean.toString(override));
                 context.put("key", key);

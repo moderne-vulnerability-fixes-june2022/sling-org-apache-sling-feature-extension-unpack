@@ -83,7 +83,7 @@ public class UnpackArchiveInstallerPlugin implements InstallTaskFactory, Resourc
             return null;
         }
         try {
-            ArtifactId aid = (ArtifactId) dict.get("artifact.id");
+            ArtifactId aid = dict.get("artifact.id") != null ? ArtifactId.fromMvnId((String) dict.get("artifact.id")) : null;
             if (aid == null) {
                 // If aid is not set, the archive doesn't come from a feature model, and we'd have
                 // to generate some sort of ID for it...
