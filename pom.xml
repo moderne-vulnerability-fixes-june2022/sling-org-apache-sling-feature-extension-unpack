@@ -18,14 +18,14 @@
     </parent>
 
     <artifactId>org.apache.sling.feature.extension.unpack</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1-SNAPSHOT</version>
     <name>Sling Featuremodel - Unpack Extension</name>
 
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-feature-extension-unpack.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-feature-extension-unpack.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-feature-extension-unpack.git</url>
-        <tag>org.apache.sling.feature.extension.unpack-0.2.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
