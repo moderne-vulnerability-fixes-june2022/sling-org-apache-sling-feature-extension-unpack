@@ -77,7 +77,7 @@ public class UnpackArchiveInstallerPluginTest {
         ArtifactId aid = ArtifactId.fromMvnId("g:a:9");
         Hashtable <String,Object> props = new Hashtable<>();
         props.put("dir", "/some/where");
-        props.put("artifact.id", aid);
+        props.put("artifact.id", aid.toMvnId());
 
         InputStream bais = new ByteArrayInputStream("".getBytes());
 

@@ -45,7 +45,7 @@ public class UnpackArchiveExtensionHandler implements ExtensionHandler {
     @Override
     public boolean handle(ExtensionHandlerContext context, Extension extension, Feature feature) throws Exception {
         return unpack.handle(extension, context.getArtifactProvider(),
-                (u,m) -> context.addInstallableArtifact((ArtifactId) m.get("artifact.id"), u, m));
+                (u,m) -> context.addInstallableArtifact(ArtifactId.fromMvnId((String) m.get("artifact.id")), u, m));
     }
 }
 

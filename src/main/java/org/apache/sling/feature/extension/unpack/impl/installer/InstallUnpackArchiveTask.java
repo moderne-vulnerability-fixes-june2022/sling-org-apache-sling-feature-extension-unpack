@@ -55,6 +55,6 @@ public class InstallUnpackArchiveTask extends InstallTask {
 
     @Override
     public String getSortKey() {
-        return getResource().getEntityId();
+        return "40-" + getResource().getEntityId();
     }
 }
