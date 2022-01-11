@@ -1,6 +1,6 @@
-# Apache Sling Featuremodel - Unpack Extension
+[![Apache Sling](https://sling.apache.org/res/logos/sling.png)](https://sling.apache.org)
 
-This module provides support for a generic "unzip" extension for the feature model. It allows you to have feature model artifact extensions unzipped to the file system.
+&#32;[![JavaDoc](https://www.javadoc.io/badge/org.apache.sling/org.apache.sling.feature.extension.unpack.svg)](https://www.javadoc.io/doc/org.apache.sling/org.apache.sling.feature.extension.unpack)&#32;[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.apache.sling/org.apache.sling.feature.extension.unpack/badge.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.sling%22%20a%3A%22org.apache.sling.feature.extension.unpack%22)&#32;[![feature](https://sling.apache.org/badges/group-feature.svg)](https://github.com/apache/sling-aggregator/blob/master/docs/groups/feature.md) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 The jar can be used in the following ways:
 
