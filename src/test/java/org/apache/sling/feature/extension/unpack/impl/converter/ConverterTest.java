@@ -22,10 +22,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Reader;
+import java.net.InetSocketAddress;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -35,17 +42,85 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.extension.unpack.Unpack;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+@SuppressWarnings("restriction")
 public class ConverterTest
 {
+    private static final String TESTRESOURCES_PREFIX = "/testresources";
+
+    private static HttpServer httpServer = null;
+    private static int httpPort = -1;
+    private static boolean failNextHttpRequest = false;
+
+    @ClassRule
+    public static TemporaryFolder tempDir = new TemporaryFolder();
+
+    @BeforeClass
+    public static void setupClass() throws IOException {
+        // Set up a simple http server for testing - port 0 will pick any available port
+        httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        httpServer.createContext(TESTRESOURCES_PREFIX, new TestHttpHandler());
+        httpServer.setExecutor(null);
+        httpServer.start();
+
+        httpPort = httpServer.getAddress().getPort();
+    }
+
+    @Before
+    public void setup() throws IOException {
+        // Delete all files in the temp directory
+        Path rootPath = tempDir.getRoot().toPath();
+        Files.walk(rootPath)
+            .sorted(Comparator.reverseOrder())
+            .filter(p -> !rootPath.equals(p))
+            .map(Path::toFile)
+            .forEach(File::delete);
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        httpServer.stop(0);
+        httpServer = null;
+        httpPort = -1;
+    }
+
+    static class TestHttpHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange he) throws IOException {
+            if (failNextHttpRequest) {
+                failNextHttpRequest = false;
+                he.sendResponseHeaders(503, -1);
+                return;
+            }
+
+            String res = URLDecoder.decode(
+                he.getRequestURI().toString().substring(TESTRESOURCES_PREFIX.length()),
+                "UTF-8");
+            Path p = new File(tempDir.getRoot(), res).toPath();
+
+            byte[] bytes = Files.readAllBytes(p);
+            he.sendResponseHeaders(200, bytes.length);
+            try(OutputStream os = he.getResponseBody()) {
+                Files.copy(p, os);
+            }
+        }
+    }
+
     @Test
     public void testConverterMain() throws Exception
     {
-        File base = File.createTempFile("test", "unpack");
-        base.delete();
-        base.mkdirs();
+        File base = tempDir.getRoot();
 
         File repo = new File(base, "repository");
         File fontZip = new File(base, "unpack one-1.0.0 bar.zip");
@@ -64,7 +139,8 @@ public class ConverterTest
             digest = Converter.bytesToHex(inputStream.getMessageDigest().digest());
         }
 
-        Converter.main(new String[]{"org.apache.sling:sling.unpack.test:slingosgifeature:0.0.1", "unpack", target.getPath(), repo.getPath(), "value=BAR", "key=FOO", fontZip.toURI().toURL().toString()});
+        Converter.main(new String[]{"org.apache.sling:sling.unpack.test:slingosgifeature:0.0.1", "unpack", target.getPath(), repo.getPath(), "value=BAR", "key=FOO",
+                "http://localhost:" + httpPort + TESTRESOURCES_PREFIX + "/unpack%20one-1.0.0%20bar.zip"});
 
         Assert.assertTrue(target.isFile());
 
@@ -82,11 +158,11 @@ public class ConverterTest
     }
 
     @Test
-    public void testConverter() throws Exception
+    public void testConverterWithRetry() throws Exception
     {
-        File base = File.createTempFile("test", "unpack");
-        base.delete();
-        base.mkdirs();
+        failNextHttpRequest = true;
+
+        File base = tempDir.getRoot();
 
         File repo = new File(base, "repository");
         File fontZip = new File(base, "unpack one-1.0.0 bar.zip");
@@ -105,7 +181,9 @@ public class ConverterTest
             digest = Converter.bytesToHex(inputStream.getMessageDigest().digest());
         }
 
-        List<String> unused = Converter.convert(ArtifactId.fromMvnId("org.apache.sling:sling.unpack.test:slingosgifeature:0.0.1"), "unpack", target, repo, (stream) -> Unpack.handles("FOO", "BAR", stream),  Arrays.asList(fontZip.toURI().toURL().toString()));
+        List<String> unused = Converter.convert(ArtifactId.fromMvnId("org.apache.sling:sling.unpack.test:slingosgifeature:0.0.1"), "unpack", target, repo,
+                (stream) -> Unpack.handles("FOO", "BAR", stream),
+                Arrays.asList("http://localhost:" + httpPort + TESTRESOURCES_PREFIX + "/unpack%20one-1.0.0%20bar.zip"));
 
         Assert.assertTrue(target.isFile());
         Assert.assertTrue(unused.isEmpty());
@@ -126,9 +204,7 @@ public class ConverterTest
     @Test
     public void testConverterFilter() throws Exception
     {
-        File base = File.createTempFile("test", "unpack");
-        base.delete();
-        base.mkdirs();
+        File base = tempDir.getRoot();
 
         File repo = new File(base, "repository");
         File fontZip = new File(base, "unpack one-1.0.0 bar.zip");
@@ -147,7 +223,10 @@ public class ConverterTest
             digest = Converter.bytesToHex(inputStream.getMessageDigest().digest());
         }
 
-        List<String> unused = Converter.convert(ArtifactId.fromMvnId("org.apache.sling:sling.unpack.test:slingosgifeature:0.0.1"), "unpack", target, repo, (stream) -> Unpack.handles("FOO", "BAR", stream),  Arrays.asList(fontZip.toURI().toURL().toString()));
+        String fontZipURL = "http://localhost:" + httpPort + TESTRESOURCES_PREFIX + "/unpack%20one-1.0.0%20bar.zip";
+        List<String> unused = Converter.convert(ArtifactId.fromMvnId("org.apache.sling:sling.unpack.test:slingosgifeature:0.0.1"), "unpack", target, repo,
+                (stream) -> Unpack.handles("FOO", "BAR", stream),
+                Arrays.asList(fontZipURL));
 
         Assert.assertTrue(target.isFile());
         Assert.assertFalse(unused.isEmpty());
@@ -164,6 +243,6 @@ public class ConverterTest
 
         Assert.assertFalse(new File(repo, ArtifactId.fromMvnId("org.apache.sling:sling.unpack.test:zip:" + digest + ":0.0.1").toMvnPath()).exists());
         Assert.assertTrue(unused.size() == 1);
-        Assert.assertEquals(fontZip.toURI().toURL().toString(),unused.get(0));
+        Assert.assertEquals(fontZipURL, unused.get(0));
     }
 }
