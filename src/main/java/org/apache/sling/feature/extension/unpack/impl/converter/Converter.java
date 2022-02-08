@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -37,6 +36,15 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.hc.client5.http.HttpRequestRetryStrategy;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.util.TimeValue;
 import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
@@ -57,8 +65,9 @@ public class Converter {
             }
 
             File featureFile = new File(args[2]);
-            if (!featureFile.getParentFile().isDirectory() && !featureFile.mkdirs()) {
-                throw new IOException("Unable to create target dir: " + featureFile.getParentFile());
+            File featureDir = featureFile.getParentFile();
+            if (!featureDir.isDirectory() && !featureDir.mkdirs()) {
+                throw new IOException("Unable to create target dir: " + featureDir);
             }
             File base = new File(args[3]);
             if (!base.isDirectory() && !base.mkdirs()) {
@@ -103,22 +112,37 @@ public class Converter {
         Extension extension = new Extension(ExtensionType.ARTIFACTS, extensionName, ExtensionState.OPTIONAL);
 
         for (String urlString : urls) {
-            URL url = new URL(urlString);
-            File tmp = File.createTempFile("unpack", ".zip");
-            try (DigestInputStream inputStream = new DigestInputStream(url.openStream(), MessageDigest.getInstance("SHA-512"))) {
-                Files.copy(inputStream, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                String digest = bytesToHex(inputStream.getMessageDigest().digest());
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            HttpRequestRetryStrategy rs = new DefaultHttpRequestRetryStrategy(10, TimeValue.ofSeconds(1)) {
+                @Override
+                protected boolean handleAsIdempotent(HttpRequest request) {
+                    md.reset(); // Reset message digest on retry
+                    return super.handleAsIdempotent(request);
+                }
+            };
 
-                if (filter.test(new FileInputStream(tmp))){
-                    Artifact artifact = new Artifact(new ArtifactId(featureId.getGroupId(), featureId.getArtifactId(), featureId.getVersion(), (featureId.getClassifier() != null ? featureId.getClassifier() + "-" : "" ) + digest, "zip"));
-                    extension.getArtifacts().add(artifact);
-                    File target = new File(repository, artifact.getId().toMvnPath());
-                    if (!target.getParentFile().isDirectory() && !target.getParentFile().mkdirs()) {
-                        throw new IOException("Unable to create parent dir: " + target.getParentFile());
+            File tmp = File.createTempFile("unpack", ".zip");
+
+            try (CloseableHttpClient httpClient = HttpClients.custom().setRetryStrategy(rs).build()) {
+                HttpGet httpGet = new HttpGet(urlString);
+                try (CloseableHttpResponse res = httpClient.execute(httpGet)) {
+                    HttpEntity entity = res.getEntity();
+                    try (DigestInputStream inputStream = new DigestInputStream(entity.getContent(), md)) {
+                        Files.copy(inputStream, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        String digest = bytesToHex(inputStream.getMessageDigest().digest());
+
+                        if (filter.test(new FileInputStream(tmp))){
+                            Artifact artifact = new Artifact(new ArtifactId(featureId.getGroupId(), featureId.getArtifactId(), featureId.getVersion(), (featureId.getClassifier() != null ? featureId.getClassifier() + "-" : "" ) + digest, "zip"));
+                            extension.getArtifacts().add(artifact);
+                            File target = new File(repository, artifact.getId().toMvnPath());
+                            if (!target.getParentFile().isDirectory() && !target.getParentFile().mkdirs()) {
+                                throw new IOException("Unable to create parent dir: " + target.getParentFile());
+                            }
+                            Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        } else {
+                            unhandled.add(urlString);
+                        }
                     }
-                    Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                } else {
-                    unhandled.add(urlString);
                 }
             } finally {
                 tmp.delete();
