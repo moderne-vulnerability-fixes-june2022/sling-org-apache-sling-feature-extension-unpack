@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-bundle-parent</artifactId>
-        <version>39</version>
+        <version>47</version>
         <relativePath />
     </parent>
 
@@ -32,6 +32,7 @@
         <jdk.version>8</jdk.version>
         <license-maven-plugin.version>1.16</license-maven-plugin.version>
         <appassembler-maven-plugin.version>2.0.0</appassembler-maven-plugin.version>
+        <project.build.outputTimestamp>1</project.build.outputTimestamp>
     </properties>
 
     <build>
@@ -144,7 +145,7 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.feature</artifactId>
-            <version>1.2.6</version>
+            <version>1.2.30</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -160,27 +161,33 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-json_1.1_spec</artifactId>
+            <version>1.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.feature.launcher</artifactId>
-            <version>1.1.4</version>
+            <version>1.2.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.installer.core</artifactId>
-            <version>3.11.4</version>
+            <version>3.12.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.installer.factory.feature</artifactId>
-            <version>0.5.0</version>
+            <version>0.6.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.utils</artifactId>
-            <version>1.11.4</version>
+            <version>1.11.8</version>
             <scope>provided</scope>
         </dependency>
 
@@ -195,6 +202,18 @@
             <artifactId>mockito-core</artifactId>
             <version>2.23.4</version>
             <scope>test</scope>
-        </dependency>        
+        </dependency>
+        <dependency>
+            <groupId>org.apache.johnzon</groupId>
+            <artifactId>johnzon-core</artifactId>
+            <version>1.2.16</version>
+            <scope>test</scope>
+        </dependency> 
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.cm.json</artifactId>
+            <version>1.0.6</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
