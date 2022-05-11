@@ -19,7 +19,7 @@
 
     <artifactId>org.apache.sling.feature.extension.unpack</artifactId>
     <version>0.3.1-SNAPSHOT</version>
-    <name>Sling Featuremodel - Unpack Extension</name>
+    <name>Apache Sling Feature Model - Unpack Extension</name>
 
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-feature-extension-unpack.git</connection>
