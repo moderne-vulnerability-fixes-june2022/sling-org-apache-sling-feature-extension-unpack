@@ -21,6 +21,7 @@ package org.apache.sling.feature.extension.unpack.impl.launcher;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.JarOutputStream;
@@ -44,9 +45,7 @@ public class UnpackLauncherExtensionTest {
 
         ExtensionContext context = Mockito.mock(ExtensionContext.class);
         Map<String, String> frameworkProperties = new HashMap<>();
-        File tmp = File.createTempFile("foo", "dir");
-        tmp.delete();
-        tmp.mkdirs();
+        File tmp = Files.createTempDirectory("foo" + "dir").toFile();
         tmp.deleteOnExit();
 
         File target = new File(tmp, "target");
